@@ -7,6 +7,7 @@ import java.util.Scanner;
 
 import entities.Author;
 import entities.Book;
+import entities.StockStatus;
 
 public class BookStoreCLI {
     private EntityManagerFactory emf;
@@ -81,22 +82,23 @@ public class BookStoreCLI {
             Author managedAuthor = em.find(Author.class, author.getId());
 
             if (managedBook != null && managedAuthor != null) {
-
                 System.out.println("Assigning Author ID: " + managedAuthor.getId() + " to Book ID: " + managedBook.getId());
 
                 if (!managedBook.getAuthors().contains(managedAuthor)) {
                     managedBook.getAuthors().add(managedAuthor);
-                    managedAuthor.getBooks().add(managedBook);
-                } else {
-                    System.out.println("This author is already assigned to the book.");
                 }
+                if (!managedAuthor.getBooks().contains(managedBook)) {
+                    managedAuthor.getBooks().add(managedBook);
+                }
+            } else {
+                System.out.println("Book or Author not found.");
             }
             transaction.commit();
         } catch (Exception e) {
             if (transaction.isActive()) {
                 transaction.rollback();
             }
-            e.printStackTrace();
+            System.out.println("Error: " + e.getMessage());
         }
     }
 
@@ -133,12 +135,29 @@ public class BookStoreCLI {
         Date birthDate = new Date();
         Author author = store.addAuthor(name, birthDate);
 
-        System.out.println("Add a new book:");
+
+        System.out.println("Add a new book (title) which belongs to " + author.getName() + ": ");
         String title = scanner.nextLine();
         Book book = store.addBook(title, author);
 
-        System.out.println("Assign author to book:");
-        store.assignAuthorToBook(author, book);
+        System.out.println("Okay, does the book have another author? Y/N");
+        String response = scanner.nextLine().toUpperCase();
+
+        while(response.equals("Y")){
+        	  System.out.println("Add a new author:");
+              name = scanner.nextLine();
+              birthDate = new Date();
+              author = store.addAuthor(name, birthDate);
+        	  store.assignAuthorToBook(author, book);
+
+        	  System.out.println("Okay, does the book have another author? Y/N");
+        	  response = scanner.nextLine().toUpperCase();
+        }
+
+
+        System.out.println(book.toString());
+
+
 
         store.close();
         scanner.close();
